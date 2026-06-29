@@ -1,0 +1,30 @@
+name: Remediation PR Gate
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Determine changed Python files
+        id: diff
+        run: |
+          git fetch origin "${{ github.base_ref }}" --quiet || true
+          FILES=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- "*.py" | tr "\n" " ")
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+          echo "Changed Python files: $FILES"
+      - name: Syntax check changed files
+        run: |
+          FILES="${{ steps.diff.outputs.files }}"
+          if [ -n "$FILES" ]; then python -m compileall -q $FILES; else echo "no python changes"; fi
+      - name: Bandit timeout scan (B113)
+        run: |
+          FILES="${{ steps.diff.outputs.files }}"
+          if [ -n "$FILES" ]; then pip install --quiet bandit && bandit $FILES --tests B113 -ll; else echo "no python changes; skip"; fi
