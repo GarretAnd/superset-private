@@ -17,29 +17,27 @@
 import logging
 from functools import partial
 
-from superset.commands.base import BaseCommand
 from superset.commands.dashboard.exceptions import (
     DashboardUnfaveError,
 )
+from superset.commands.favorites import BaseDelFavoriteCommand
 from superset.daos.dashboard import DashboardDAO
-from superset.models.dashboard import Dashboard
 from superset.utils.decorators import on_error, transaction
 
 logger = logging.getLogger(__name__)
 
 
-class DelFavoriteDashboardCommand(BaseCommand):
-    def __init__(self, dashboard_id: int) -> None:
-        self._dashboard_id = dashboard_id
-        self._dashboard: Dashboard | None = None
+class DelFavoriteDashboardCommand(BaseDelFavoriteCommand):
+    dao = DashboardDAO
+    not_found_error = None  # get_by_id_or_slug raises its own errors
+    unfave_error = DashboardUnfaveError
 
     @transaction(on_error=partial(on_error, reraise=DashboardUnfaveError))
     def run(self) -> None:
-        self.validate()
-        if self._dashboard:
-            return DashboardDAO.remove_favorite(self._dashboard)
+        return super().run()
 
     def validate(self) -> None:
-        # Raises DashboardNotFoundError or DashboardAccessDeniedError
-        dashboard = DashboardDAO.get_by_id_or_slug(self._dashboard_id)
-        self._dashboard = dashboard
+        # DashboardDAO.get_by_id_or_slug raises DashboardNotFoundError or
+        # DashboardAccessDeniedError internally
+        dashboard = DashboardDAO.get_by_id_or_slug(self._model_id)
+        self._model = dashboard

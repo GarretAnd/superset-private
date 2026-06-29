@@ -17,7 +17,6 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 from typing import Dict, List
 
 from flask_appbuilder.models.sqla.interface import SQLAInterface
@@ -26,11 +25,15 @@ from sqlalchemy.orm import Query
 
 from superset.charts.filters import ChartFilter
 from superset.commands.chart.exceptions import ChartNotFoundError
-from superset.daos.base import BaseDAO, ColumnOperator, ColumnOperatorEnum
+from superset.daos.base import (
+    BaseDAO,
+    ColumnOperator,
+    ColumnOperatorEnum,
+    FavoriteDAOMixin,
+)
 from superset.extensions import db
-from superset.models.core import FavStar, FavStarClassName
+from superset.models.core import FavStarClassName
 from superset.models.slice import id_or_uuid_filter, Slice, slice_user
-from superset.utils.core import get_user_id
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +45,10 @@ CHART_CUSTOM_FIELDS = {
 }
 
 
-class ChartDAO(BaseDAO[Slice]):
+class ChartDAO(FavoriteDAOMixin, BaseDAO[Slice]):
     base_filter = ChartFilter
     filterable_relationships = frozenset({"dashboards"})
+    fav_star_class_name = FavStarClassName.CHART
 
     @classmethod
     def apply_column_operators(
@@ -105,44 +109,3 @@ class ChartDAO(BaseDAO[Slice]):
         if not chart:
             raise ChartNotFoundError()
         return chart
-
-    @staticmethod
-    def favorited_ids(charts: list[Slice]) -> list[FavStar]:
-        ids = [chart.id for chart in charts]
-        return [
-            star.obj_id
-            for star in db.session.query(FavStar.obj_id)
-            .filter(
-                FavStar.class_name == FavStarClassName.CHART,
-                FavStar.obj_id.in_(ids),
-                FavStar.user_id == get_user_id(),
-            )
-            .all()
-        ]
-
-    @staticmethod
-    def add_favorite(chart: Slice) -> None:
-        ids = ChartDAO.favorited_ids([chart])
-        if chart.id not in ids:
-            db.session.add(
-                FavStar(
-                    class_name=FavStarClassName.CHART,
-                    obj_id=chart.id,
-                    user_id=get_user_id(),
-                    dttm=datetime.now(),
-                )
-            )
-
-    @staticmethod
-    def remove_favorite(chart: Slice) -> None:
-        fav = (
-            db.session.query(FavStar)
-            .filter(
-                FavStar.class_name == FavStarClassName.CHART,
-                FavStar.obj_id == chart.id,
-                FavStar.user_id == get_user_id(),
-            )
-            .one_or_none()
-        )
-        if fav:
-            db.session.delete(fav)

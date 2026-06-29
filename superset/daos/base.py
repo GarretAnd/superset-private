@@ -910,3 +910,82 @@ class BaseDAO(CoreBaseDAO[T], Generic[T]):
             column_operators=column_operators, skip_base_filter=skip_base_filter
         )
         return query.count()
+
+
+class FavoriteDAOMixin:
+    """Mixin providing favorite (star) operations for DAOs using the FavStar table.
+
+    Subclasses must define a ``fav_star_class_name`` class variable with the
+    appropriate ``FavStarClassName`` enum value.
+
+    Example::
+
+        class ChartDAO(FavoriteDAOMixin, BaseDAO[Slice]):
+            fav_star_class_name = FavStarClassName.CHART
+    """
+
+    fav_star_class_name: ClassVar[str]
+
+    @classmethod
+    def favorited_ids(cls, models: list[Any]) -> list[int]:
+        from superset.models.core import (
+            FavStar,  # pylint: disable=import-outside-toplevel
+        )
+        from superset.utils.core import (
+            get_user_id,  # pylint: disable=import-outside-toplevel
+        )
+
+        ids = [model.id for model in models]
+        return [
+            star.obj_id
+            for star in db.session.query(FavStar.obj_id)
+            .filter(
+                FavStar.class_name == cls.fav_star_class_name,
+                FavStar.obj_id.in_(ids),
+                FavStar.user_id == get_user_id(),
+            )
+            .all()
+        ]
+
+    @classmethod
+    def add_favorite(cls, model: Any) -> None:
+        from datetime import datetime  # pylint: disable=import-outside-toplevel
+
+        from superset.models.core import (
+            FavStar,  # pylint: disable=import-outside-toplevel
+        )
+        from superset.utils.core import (
+            get_user_id,  # pylint: disable=import-outside-toplevel
+        )
+
+        ids = cls.favorited_ids([model])
+        if model.id not in ids:
+            db.session.add(
+                FavStar(
+                    class_name=cls.fav_star_class_name,
+                    obj_id=model.id,
+                    user_id=get_user_id(),
+                    dttm=datetime.now(),
+                )
+            )
+
+    @classmethod
+    def remove_favorite(cls, model: Any) -> None:
+        from superset.models.core import (
+            FavStar,  # pylint: disable=import-outside-toplevel
+        )
+        from superset.utils.core import (
+            get_user_id,  # pylint: disable=import-outside-toplevel
+        )
+
+        fav = (
+            db.session.query(FavStar)
+            .filter(
+                FavStar.class_name == cls.fav_star_class_name,
+                FavStar.obj_id == model.id,
+                FavStar.user_id == get_user_id(),
+            )
+            .one_or_none()
+        )
+        if fav:
+            db.session.delete(fav)
