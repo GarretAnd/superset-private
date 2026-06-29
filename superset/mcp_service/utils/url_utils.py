@@ -36,6 +36,7 @@ def _is_local_url(url: str) -> bool:
         parsed = urlparse(url)
         return parsed.hostname in LOCAL_HOSTNAMES if parsed.hostname else True
     except Exception:
+        logger.debug("Failed to parse URL %s, assuming local", url, exc_info=True)
         return True
 
 
@@ -54,6 +55,7 @@ def get_superset_base_url() -> str:
             return user_friendly_url.rstrip("/")
         return default_url
     except Exception:
+        logger.debug("Could not read Superset base URL from config", exc_info=True)
         return default_url
 
 

@@ -874,6 +874,11 @@ WHERE datistemplate = false;
                 f"WHERE pid='{cancel_query_id}'"
             )
         except Exception:  # pylint: disable=broad-except
+            logger.warning(
+                "Failed to cancel PostgreSQL query %s",
+                cancel_query_id,
+                exc_info=True,
+            )
             return False
 
         return True

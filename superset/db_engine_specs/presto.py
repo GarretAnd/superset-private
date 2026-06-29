@@ -540,7 +540,11 @@ class PrestoBaseEngineSpec(BaseEngineSpec, metaclass=ABCMeta):
         try:
             col_names, values = cls.latest_partition(database, table, show_first=True)
         except Exception:  # pylint: disable=broad-except
-            # table is not partitioned
+            logger.debug(
+                "Could not get latest partition for %s (table may not be partitioned)",
+                table,
+                exc_info=True,
+            )
             return None
 
         if values is None:

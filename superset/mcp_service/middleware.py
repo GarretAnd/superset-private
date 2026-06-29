@@ -446,7 +446,9 @@ class StructuredContentStripperMiddleware(Middleware):
             # ToolError raised by inner middleware (e.g. GlobalErrorHandlerMiddleware)
             # cannot be encoded by the MCP SDK in a tools/list response — it expects a
             # list, not an error object — causing "encoding without a string argument".
-            # Return an empty list; GlobalErrorHandlerMiddleware already logged it.
+            logger.warning(
+                "Failed to list MCP tools, returning empty list", exc_info=True
+            )
             return []
         return [
             t.model_copy(update={"output_schema": None})
@@ -1109,7 +1111,7 @@ class FieldPermissionsMiddleware(Middleware):
 
             return getattr(g, "user", None)
         except Exception:
-            # Try to get user from core utils
+            logger.debug("Flask g.user not available, trying core utils", exc_info=True)
             try:
                 user_id = get_user_id()
                 if user_id:

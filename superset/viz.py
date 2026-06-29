@@ -506,8 +506,10 @@ class BaseViz:  # pylint: disable=too-many-public-methods
         try:
             add_impersonation_cache_key_if_needed(self.datasource.database, cache_dict)
         except AttributeError:
-            # datasource or database do not exist
-            pass
+            logger.debug(
+                "Datasource or database not available for impersonation cache key",
+                exc_info=True,
+            )
 
         json_data = self.json_dumps(cache_dict, sort_keys=True)
         return hash_from_str(json_data)

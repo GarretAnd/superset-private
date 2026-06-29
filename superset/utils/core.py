@@ -628,6 +628,7 @@ def sanitize_url(url: str) -> str:
         return ""
 
     except Exception:
+        logger.debug("Failed to sanitize URL: %s", url, exc_info=True)
         return ""
 
 

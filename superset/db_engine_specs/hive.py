@@ -464,7 +464,11 @@ class HiveEngineSpec(PrestoEngineSpec):
                 show_first=True,
             )
         except Exception:  # pylint: disable=broad-except
-            # table is not partitioned
+            logger.debug(
+                "Could not get latest partition for %s (table may not be partitioned)",
+                table,
+                exc_info=True,
+            )
             return None
         if values is not None and columns is not None:
             for col_name, value in zip(col_names, values, strict=False):

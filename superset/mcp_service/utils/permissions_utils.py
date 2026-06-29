@@ -68,6 +68,7 @@ def get_current_user() -> Optional[User]:
 
         return getattr(g, "user", None)
     except Exception:
+        logger.debug("Could not get current user from Flask context", exc_info=True)
         return None
 
 
