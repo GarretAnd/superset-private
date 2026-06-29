@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import inspect
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Any, Callable
 
@@ -73,7 +73,7 @@ def set_and_log_cache(
     if timeout == CACHE_DISABLED_TIMEOUT:
         return
     try:
-        dttm = datetime.utcnow().isoformat().split(".")[0]
+        dttm = datetime.now(timezone.utc).isoformat().split(".")[0]
         value = {**cache_value, "dttm": dttm}
         cache_instance.set(cache_key, value, timeout=timeout)
         stats_logger = app.config["STATS_LOGGER"]
