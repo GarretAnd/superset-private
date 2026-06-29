@@ -109,7 +109,9 @@ class TestImportExport(SupersetTestCase):
             id=id,
         )
 
-    def create_dashboard(self, title, id=0, slcs=[]):  # noqa: B006
+    def create_dashboard(self, title, id=0, slcs=None):
+        if slcs is None:
+            slcs = []
         json_metadata = {"remote_id": id}
         return Dashboard(
             id=id,
@@ -121,7 +123,11 @@ class TestImportExport(SupersetTestCase):
             published=False,
         )
 
-    def create_table(self, name, schema=None, id=0, cols_names=[], metric_names=[]):  # noqa: B006
+    def create_table(self, name, schema=None, id=0, cols_names=None, metric_names=None):
+        if cols_names is None:
+            cols_names = []
+        if metric_names is None:
+            metric_names = []
         params = {"remote_id": id, "database_name": "examples"}
         table = SqlaTable(
             id=id,
