@@ -354,7 +354,8 @@ def generate_code_sample(
 
 response = requests.get(
     "http://localhost:8088{example_path}",
-    headers={{"Authorization": "Bearer " + access_token}}
+    headers={{"Authorization": "Bearer " + access_token}},
+    timeout=30,
 )
 print(response.json())"""
     elif method.lower() == "post":
@@ -363,7 +364,8 @@ print(response.json())"""
 response = requests.post(
     "http://localhost:8088{example_path}",
     headers={{"Authorization": "Bearer " + access_token}},
-    json={{"key": "value"}}
+    json={{"key": "value"}},
+    timeout=30,
 )
 print(response.json())"""
     elif method.lower() == "put":
@@ -372,7 +374,8 @@ print(response.json())"""
 response = requests.put(
     "http://localhost:8088{example_path}",
     headers={{"Authorization": "Bearer " + access_token}},
-    json={{"key": "value"}}
+    json={{"key": "value"}},
+    timeout=30,
 )
 print(response.json())"""
     elif method.lower() == "delete":
@@ -380,7 +383,8 @@ print(response.json())"""
 
 response = requests.delete(
     "http://localhost:8088{example_path}",
-    headers={{"Authorization": "Bearer " + access_token}}
+    headers={{"Authorization": "Bearer " + access_token}},
+    timeout=30,
 )
 print(response.status_code)"""
     else:
@@ -388,7 +392,8 @@ print(response.status_code)"""
 
 response = requests.{method.lower()}(
     "http://localhost:8088{example_path}",
-    headers={{"Authorization": "Bearer " + access_token}}
+    headers={{"Authorization": "Bearer " + access_token}},
+    timeout=30,
 )
 print(response.json())"""
 
