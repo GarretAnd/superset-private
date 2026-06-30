@@ -174,12 +174,15 @@ class WebhookNotification(BaseNotification):
                     wh_url,
                     data=data,
                     files=files,
-                    timeout=60,
+                    timeout=current_app.config["ALERT_REPORTS_WEBHOOK_TIMEOUT"],
                     allow_redirects=False,
                 )
             else:
                 response = requests.post(
-                    wh_url, json=payload, timeout=60, allow_redirects=False
+                    wh_url,
+                    json=payload,
+                    timeout=current_app.config["ALERT_REPORTS_WEBHOOK_TIMEOUT"],
+                    allow_redirects=False,
                 )
 
             logger.info(

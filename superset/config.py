@@ -2167,6 +2167,10 @@ ALERT_MINIMUM_INTERVAL = int(timedelta(minutes=0).total_seconds())
 REPORT_MINIMUM_INTERVAL = int(timedelta(minutes=0).total_seconds())
 # Enforce HTTPS for webhook alerts/reports
 ALERT_REPORTS_WEBHOOK_HTTPS_ONLY = True
+# Socket timeout (in seconds) for webhook notification HTTP requests. Prevents
+# hung workers when the webhook target is unreachable or slow. Set to None to
+# disable (not recommended).
+ALERT_REPORTS_WEBHOOK_TIMEOUT = 60
 
 # When True, webhook alert/report dispatch is permitted to call private/internal
 # IP addresses (RFC-1918, loopback, link-local). Intended for deployments where

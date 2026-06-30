@@ -251,6 +251,7 @@ def test_send_treats_redirect_as_failure(monkeypatch, mock_header_data) -> None:
         config = {
             "ALERT_REPORTS_WEBHOOK_HTTPS_ONLY": True,
             "ALERT_REPORTS_WEBHOOK_ALLOW_INTERNAL_HOSTS": True,
+            "ALERT_REPORTS_WEBHOOK_TIMEOUT": 60,
         }
 
     class MockResponse:
@@ -271,6 +272,28 @@ def test_send_treats_redirect_as_failure(monkeypatch, mock_header_data) -> None:
 
     with pytest.raises(NotificationParamException, match="redirect"):
         webhook_notification.send()
+
+
+def _make_webhook_with_files(
+    mock_header_data,
+    screenshots: list[bytes] | None = None,
+) -> WebhookNotification:
+    from superset.reports.models import ReportRecipients, ReportRecipientType
+    from superset.reports.notifications.base import NotificationContent
+
+    content = NotificationContent(
+        name="test alert",
+        header_data=mock_header_data,
+        description="Test description",
+        screenshots=screenshots or [b"fakeimg"],
+    )
+    return WebhookNotification(
+        recipient=ReportRecipients(
+            type=ReportRecipientType.WEBHOOK,
+            recipient_config_json='{"target": "https://example.com/webhook"}',
+        ),
+        content=content,
+    )
 
 
 def _make_webhook(mock_header_data) -> WebhookNotification:
@@ -299,6 +322,7 @@ def _allow_internal_app() -> type:
         config = {
             "ALERT_REPORTS_WEBHOOK_HTTPS_ONLY": True,
             "ALERT_REPORTS_WEBHOOK_ALLOW_INTERNAL_HOSTS": True,
+            "ALERT_REPORTS_WEBHOOK_TIMEOUT": 60,
         }
 
     return MockCurrentApp
@@ -424,3 +448,87 @@ def test_send_max_time_does_not_abandon_recovering_target(
     # would pin elapsed at 0 and pass at any ``max_time``, including a broken
     # ``max_time=1`` — this non-zero tick keeps the guard real.
     assert len(post_calls) == 3
+
+
+def test_send_passes_timeout_for_json_payload(monkeypatch, mock_header_data) -> None:
+    """
+    Regression test (B113): every ``requests.post`` call must include a
+    ``timeout`` kwarg sourced from the ``ALERT_REPORTS_WEBHOOK_TIMEOUT``
+    config key. A missing timeout leaves the socket blocking indefinitely,
+    which can wedge a Celery worker.
+    """
+    webhook_notification = _make_webhook(mock_header_data)
+    captured_kwargs: dict[str, object] = {}
+
+    class _OkResponse:
+        status_code = 200
+        text = ""
+
+    def fake_post(*args: object, **kwargs: object) -> _OkResponse:
+        captured_kwargs.update(kwargs)
+        return _OkResponse()
+
+    class MockCurrentApp:
+        config = {
+            "ALERT_REPORTS_WEBHOOK_HTTPS_ONLY": False,
+            "ALERT_REPORTS_WEBHOOK_ALLOW_INTERNAL_HOSTS": True,
+            "ALERT_REPORTS_WEBHOOK_TIMEOUT": 30,
+        }
+
+    monkeypatch.setattr(
+        "superset.reports.notifications.webhook.current_app", MockCurrentApp
+    )
+    monkeypatch.setattr(
+        "superset.reports.notifications.webhook.feature_flag_manager.is_feature_enabled",
+        lambda flag: True,
+    )
+    monkeypatch.setattr(
+        "superset.reports.notifications.webhook.requests.post", fake_post
+    )
+
+    webhook_notification.send()
+
+    assert "timeout" in captured_kwargs, "requests.post must include a timeout kwarg"
+    assert captured_kwargs["timeout"] == 30
+
+
+def test_send_passes_timeout_for_multipart_payload(
+    monkeypatch, mock_header_data
+) -> None:
+    """
+    Regression test (B113): the multipart/form-data code path (files attached)
+    must also set ``timeout`` from ``ALERT_REPORTS_WEBHOOK_TIMEOUT``.
+    """
+    webhook_notification = _make_webhook_with_files(mock_header_data)
+    captured_kwargs: dict[str, object] = {}
+
+    class _OkResponse:
+        status_code = 200
+        text = ""
+
+    def fake_post(*args: object, **kwargs: object) -> _OkResponse:
+        captured_kwargs.update(kwargs)
+        return _OkResponse()
+
+    class MockCurrentApp:
+        config = {
+            "ALERT_REPORTS_WEBHOOK_HTTPS_ONLY": False,
+            "ALERT_REPORTS_WEBHOOK_ALLOW_INTERNAL_HOSTS": True,
+            "ALERT_REPORTS_WEBHOOK_TIMEOUT": 45,
+        }
+
+    monkeypatch.setattr(
+        "superset.reports.notifications.webhook.current_app", MockCurrentApp
+    )
+    monkeypatch.setattr(
+        "superset.reports.notifications.webhook.feature_flag_manager.is_feature_enabled",
+        lambda flag: True,
+    )
+    monkeypatch.setattr(
+        "superset.reports.notifications.webhook.requests.post", fake_post
+    )
+
+    webhook_notification.send()
+
+    assert "timeout" in captured_kwargs, "requests.post must include a timeout kwarg"
+    assert captured_kwargs["timeout"] == 45
