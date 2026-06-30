@@ -170,7 +170,7 @@ class WebhookNotification(BaseNotification):
                     else:
                         data[key] = value
 
-                response = requests.post(
+                response = requests.post(  # nosec B113
                     wh_url,
                     data=data,
                     files=files,
@@ -178,7 +178,7 @@ class WebhookNotification(BaseNotification):
                     allow_redirects=False,
                 )
             else:
-                response = requests.post(
+                response = requests.post(  # nosec B113
                     wh_url,
                     json=payload,
                     timeout=current_app.config["ALERT_REPORTS_WEBHOOK_TIMEOUT"],
