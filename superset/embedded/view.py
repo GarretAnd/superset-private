@@ -53,8 +53,7 @@ class EmbeddedView(BaseSupersetView):
 
         if not embedded:
             abort(404)
-
-        assert embedded is not None
+            raise ValueError("Embedded dashboard not found")
 
         # validate request referrer in allowed domains
         is_referrer_allowed = not embedded.allowed_domains

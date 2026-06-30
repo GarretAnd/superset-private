@@ -38,7 +38,8 @@ class DeleteSavedQueryCommand(BaseCommand):
     @transaction(on_error=partial(on_error, reraise=SavedQueryDeleteFailedError))
     def run(self) -> None:
         self.validate()
-        assert self._models
+        if not self._models:
+            raise ValueError("Saved queries not found after validation")
         SavedQueryDAO.delete(self._models)
 
     def validate(self) -> None:

@@ -58,7 +58,8 @@ class UpdateSemanticViewCommand(BaseCommand):
     )
     def run(self) -> Model:
         self.validate()
-        assert self._model
+        if not self._model:
+            raise ValueError("Semantic view not found after validation")
         return SemanticViewDAO.update(self._model, attributes=self._properties)
 
     def validate(self) -> None:
@@ -104,7 +105,8 @@ class UpdateSemanticLayerCommand(BaseCommand):
     )
     def run(self) -> Model:
         self.validate()
-        assert self._model
+        if not self._model:
+            raise ValueError("Semantic layer not found after validation")
         if isinstance(self._properties.get("configuration"), dict):
             self._properties["configuration"] = json.dumps(
                 self._properties["configuration"]

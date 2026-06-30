@@ -39,7 +39,8 @@ class UpdateTagCommand(UpdateMixin, BaseCommand):
     @transaction()
     def run(self) -> Model:
         self.validate()
-        assert self._model
+        if not self._model:
+            raise ValueError("Tag not found after validation")
         self._model.name = self._properties["name"]
         TagDAO.create_tag_relationship(
             objects_to_tag=self._properties.get("objects_to_tag", []),

@@ -41,7 +41,8 @@ class DeleteReportScheduleCommand(BaseCommand):
     @transaction(on_error=partial(on_error, reraise=ReportScheduleDeleteFailedError))
     def run(self) -> None:
         self.validate()
-        assert self._models
+        if not self._models:
+            raise ValueError("Report schedules not found after validation")
         ReportScheduleDAO.delete(self._models)
 
     def validate(self) -> None:

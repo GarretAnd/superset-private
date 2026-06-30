@@ -43,7 +43,8 @@ class DeleteDatabaseCommand(BaseCommand):
     @transaction(on_error=partial(on_error, reraise=DatabaseDeleteFailedError))
     def run(self) -> None:
         self.validate()
-        assert self._model
+        if not self._model:
+            raise ValueError("Database not found after validation")
         DatabaseDAO.delete([self._model])
 
     def validate(self) -> None:
