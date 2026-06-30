@@ -246,7 +246,7 @@ class ImportDatasetsCommand(BaseCommand):
         contents: dict[str, str],
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> None:
         self.contents = contents
         self._configs: dict[str, Any] = {}
 
