@@ -2175,6 +2175,12 @@ ALERT_REPORTS_WEBHOOK_HTTPS_ONLY = True
 # in any internet-facing deployment.
 ALERT_REPORTS_WEBHOOK_ALLOW_INTERNAL_HOSTS: bool = False
 
+# Socket timeout (in seconds) for the outbound HTTP POST to webhook targets.
+# Without a timeout the request blocks indefinitely if the webhook target is
+# unreachable, which leaves the report schedule stuck in the WORKING state.
+# Set to None to disable (not recommended).
+ALERT_REPORTS_WEBHOOK_TIMEOUT: int = 60
+
 # When True, Impala's cancel_query HTTP call is permitted to target hosts in
 # private/internal IP ranges (RFC-1918, loopback, link-local). Intended for
 # operators whose Impala cluster runs on an internal network. Leave False (the
