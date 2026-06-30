@@ -39,7 +39,8 @@ class UpdateThemeCommand(UpdateMixin):
     @transaction(on_error=partial(on_error, reraise=Exception))
     def run(self) -> Theme:
         self.validate()
-        assert self._model
+        if not self._model:
+            raise ValueError("Theme not found after validation")
         theme = ThemeDAO.update(self._model, self._properties)
         return theme
 

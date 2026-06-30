@@ -94,7 +94,8 @@ class StreamingSqlResultExportCommand(BaseStreamingCSVExportCommand):
         Returns:
             Tuple of (sql_query, database_object, catalog, schema)
         """
-        assert self._query is not None
+        if self._query is None:
+            raise ValueError("Query not found after validation")
 
         select_sql = self._query.select_sql
         executed_sql = self._query.executed_sql
@@ -114,7 +115,8 @@ class StreamingSqlResultExportCommand(BaseStreamingCSVExportCommand):
         Returns:
             Adjusted row limit or None for unlimited
         """
-        assert self._query is not None
+        if self._query is None:
+            raise ValueError("Query not found after validation")
 
         select_sql = self._query.select_sql
         executed_sql = self._query.executed_sql

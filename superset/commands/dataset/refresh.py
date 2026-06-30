@@ -45,7 +45,8 @@ class RefreshDatasetCommand(BaseCommand):
     @transaction(on_error=partial(on_error, reraise=DatasetRefreshFailedError))
     def run(self) -> Model:
         self.validate()
-        assert self._model
+        if not self._model:
+            raise ValueError("Dataset not found after validation")
         self._model.fetch_metadata()
 
         # Detect datetime formats if feature is enabled

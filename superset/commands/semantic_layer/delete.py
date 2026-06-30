@@ -52,7 +52,8 @@ class DeleteSemanticLayerCommand(BaseCommand):
     )
     def run(self) -> None:
         self.validate()
-        assert self._model
+        if not self._model:
+            raise ValueError("Semantic layer not found after validation")
         SemanticLayerDAO.delete([self._model])
 
     def validate(self) -> None:
@@ -75,7 +76,8 @@ class DeleteSemanticViewCommand(BaseCommand):
     )
     def run(self) -> None:
         self.validate()
-        assert self._model
+        if not self._model:
+            raise ValueError("Semantic view not found after validation")
         SemanticViewDAO.delete([self._model])
 
     def validate(self) -> None:
